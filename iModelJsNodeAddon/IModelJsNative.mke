@@ -28,6 +28,12 @@ cDefs + -DBUILDING_NODE_EXTENSION
 %endif
 
 o = $(OutputRootDir)Build/imodeljs-addon/
+%if defined (IMODELJS_WINDOWS_PRIVATE_LIBS)
+    o = $(OutputRootDir)Build/imodeljs-addon-windows-private/
+    # Compile against static Bentley headers without changing the addon's shared-library output.
+    cDefs + -DCREATE_STATIC_LIBRARIES=1
+%endif
+
 always:
     !~@mkdir $(o)
 
@@ -140,6 +146,22 @@ DLM_OBJECT_DEST     = $(o)
 DLM_OBJECT_FILES    = $(MultiCompileObjectList)
 DLM_NOENTRY         = 1
 DLM_NO_CONTEXT_LINK = 1
+
+%if defined (IMODELJS_WINDOWS_PRIVATE_LIBS)
+    %if $(BUILD_TOOLSET) != "VS2022"
+        %error The private Windows addon requires VS2022 for its explicit export object.
+    %endif
+
+    # Pass a librarian-generated .exp so MSVC does not collect exports from the static inputs.
+    PrivateExportDef = $(baseDir)IModelJsNative-WindowsPrivate.def
+    PrivateExportObj = $(o)imodeljs-exports.exp
+    $(PrivateExportObj) $(o)imodeljs.lib : $(PrivateExportDef) $(_MakeFileSpec)
+        $(msg)
+        $(CLibCmd) -nologo -machine:x64 -def:"$(PrivateExportDef)" -out:"$(o)imodeljs.lib"
+        $(copyCmd) "$(o)imodeljs.exp" "$(PrivateExportObj)"
+
+    DLM_OBJECT_FILES + $(PrivateExportObj)
+%endif
 
 %include $(baseDir)IModelJsNative_input_libs.mki
 

@@ -48,6 +48,53 @@ THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinVisualization.a
     THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libCrashpadClient.a
 %endif
 
+%elif defined (IMODELJS_WINDOWS_PRIVATE_LIBS)
+
+# In a dynamic context, Windows import libraries and static archives both end in .lib.
+# Select the static SubParts directory explicitly; iTwinNapi.lib is linked separately.
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinGeoCoord.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinCsmapStatic.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinCurl.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinFolly.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinIcu4c.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinJpeg.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)BeLibJpegTurbo.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinBentley.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinGeom.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinGeomSerialization.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)BePng.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinSQLite.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinSQLiteEC.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)BeZlib.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinPlatform.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinECObjects.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinECPresentation.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinFreetype2.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)lzma.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)snappy.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinUnits.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinOpenSSL.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwin_google_re2.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinPugixml.lib
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)proxyres.lib
+
+%if defined (BENTLEYCONFIG_PARASOLID)
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinPSBRepGeometry.lib
+    # On Windows the static BRepCore archive already incorporates Parasolid.
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinBRepCore.lib
+%endif
+
+%if !defined (BENTLEYCONFIG_NO_VISUALIZATION)
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)iTwinVisualization.lib
+%endif
+
+%if defined (BENTLEYCONFIG_CRASHPAD)
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)CrashpadClient.lib
+%endif
+
+LINKER_LIBRARIES + $(oleLibs) $(guiLibs) kernel32.lib wininet.lib winhttp.lib
+LINKER_LIBRARIES + ws2_32.lib wldap32.lib advapi32.lib crypt32.lib secur32.lib iphlpapi.lib bcrypt.lib dbghelp.lib
+
 %else
 
 DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)iTwin_google_re2$(stlibext)

@@ -79,6 +79,32 @@
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
   </Product>
 
+  <Part Name="iModelJsNodeAddonWindowsPrivate" OnlyPlatforms="x64"
+        BentleyBuildMakeFile="makePackages.mke" BentleyBuildMakeOptions="-dIMODELJS_WINDOWS_PRIVATE_LIBS=1">
+    <SubProduct ProductName="iModelJsNative-WindowsPrivate"/>
+    <SubPart PartName="iModelJsApiDeclarations"/>
+  </Part>
+
+  <Product Name="iModelJsNative-WindowsPrivate">
+    <SubPart PartName="iModelJsNative-WindowsPrivateModule" LibType="Dynamic"/>
+    <SubPart PartName="napi-dll-win-private-addon" PartFile="node-addon-api/node-addon-api" LibType="Dynamic"/>
+    <Directories DirectoryListName="iModelJsNodeAddonWindowsPrivateDeliveryList"/>
+  </Product>
+
+  <ProductDirectoryList ListName="iModelJsNodeAddonWindowsPrivateDeliveryList">
+    <!-- The dynamic N-API build also depends on BentleyDll. Deliver only the explicit runtime files. -->
+    <ProductDirectory Name="Assemblies" Deliver="false"/>
+    <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
+    <ProductDirectory Name="AddonRuntime" Path=""/>
+    <ProductDirectory Name="StaticAssemblies" LibType="Static" Path=""/>
+    <ProductDirectory Name="Assets" Path="Assets"/>
+    <ProductDirectory Name="Assets" LibType="Static" Path="Assets"/>
+    <ProductDirectory Name="VendorNotices" Path="Notices"/>
+    <ProductDirectory Name="VendorNotices" LibType="Static" Path="Notices"/>
+    <ProductDirectory Name="CrashpadHandler" Path=""/>
+    <ProductDirectory Name="CrashpadHandler" LibType="Static" Path=""/>
+  </ProductDirectoryList>
+
   <Product Name="iModelJsNative-Linux">
     <SubPart PartName="iModelJsNative-Static" LibType="Static" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
@@ -131,6 +157,17 @@
     <SubPart PartName="CrashpadShim"/>
     <Bindings>
         <Files ProductDirectoryName="StaticAssemblies">Delivery/imodeljs.node</Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="iModelJsNative-WindowsPrivateModule" OnlyPlatforms="x64" ExcludeLibType="Static"
+        BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dIMODELJS_WINDOWS_PRIVATE_LIBS=1">
+    <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api" LibType="Dynamic"/>
+    <SubPart PartName="iModelJsNativeLibCommon" LibType="Static"/>
+    <SubPart PartName="CrashpadShim"/>
+    <SubPart PartName="ITwinDaemon-exe" PartFile="iModelCore/BeSQLite/BeSQLite"/>
+    <Bindings>
+      <Files ProductDirectoryName="AddonRuntime">Delivery/imodeljs.node</Files>
     </Bindings>
   </Part>
 

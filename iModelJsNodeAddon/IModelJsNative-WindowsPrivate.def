@@ -1,0 +1,3 @@
+LIBRARY imodeljs.node
+EXPORTS
+    _register_iModelJsNative_

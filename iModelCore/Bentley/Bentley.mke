@@ -7,6 +7,10 @@ BUILD_WITH_C20=1
 
 %include mdl.mki
 
+%if $(TARGET_PLATFORM) == "Windows" && defined (CREATE_STATIC_LIBRARIES)
+    cDefs + -DU_STATIC_IMPLEMENTATION
+%endif
+
 baseDir         = $(_MakeFilePath)
 bentleyDir      = $(baseDir)Bentley/
 nonportDir      = $(bentleyDir)nonport/

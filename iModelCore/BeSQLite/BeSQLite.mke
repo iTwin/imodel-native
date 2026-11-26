@@ -25,6 +25,10 @@ BUILD_WITH_C20=1
 
 %include mdl.mki
 
+%if $(TARGET_PLATFORM) == "Windows" && defined (CREATE_STATIC_LIBRARIES)
+    cDefs + -DCURL_STATICLIB=1 -DU_STATIC_IMPLEMENTATION
+%endif
+
 cDefs +% -D__BE_SQLITE_HOST_DLL__
 
 %if $(TARGET_PLATFORM) == "WinRT"

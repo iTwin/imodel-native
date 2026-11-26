@@ -34,6 +34,13 @@
         </Bindings>
     </Part>
 
+    <Part Name="napi-dll-win-private-addon" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="napi-lib"/>
+        <Bindings>
+            <Files ProductDirectoryName="AddonRuntime">Delivery/Node/iTwinNapi.dll</Files>
+        </Bindings>
+    </Part>
+
     <!-- SEE NOTE ABOVE! Products that do *not* need to run Node/Javascript should include this as a SubPart. Otherwise, you must instead choose "node-dll-win". -->
     <Part Name="napi-stub">
         <SubPart PartName="napi-lib"/>
