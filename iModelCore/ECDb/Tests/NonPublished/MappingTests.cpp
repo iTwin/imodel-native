@@ -811,7 +811,7 @@ TEST_F(MappingTests, MovePropertyUpWithoutSharedColumns)
 // (ts_Base.Code and ts_Base.Code1). Base.Code string has to reconcile with B whose Code was int.
 // RESULT: accepted. Base.Code is mapped to ts_Base.Code, so A keeps its strings, but B's ints in
 // Code1 are never moved and B.Code reads NULL for every existing instance. Data loss on an accepted
-// import; a rejection would be correct. BUG.
+// import; a rejection would be correct.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(MappingTests, DISABLED_MovePropertyUpWithoutSharedColumns_SiblingsDifferInType)
@@ -831,7 +831,7 @@ TEST_F(MappingTests, DISABLED_MovePropertyUpWithoutSharedColumns_SiblingsDifferI
         return;
         }
 
-    EXPECT_EQ(0, CountWhere("B", "Code IS NULL")) << "BUG: import accepted, B's Code values (int, column Code1) were dropped instead of moved to Base.Code.";
+    EXPECT_EQ(0, CountWhere("B", "Code IS NULL"));
     // B.Code was int and is now string: it has to read back as the int's text, or the import should have refused.
     VerifyData(ExpectedDataChanges().ConvertValuesOf("TestSchema:B", "Code", [] (Utf8StringCR v) { return Utf8String("\"") + v + "\""; }));
     }
@@ -877,7 +877,7 @@ TEST_F(MappingTests, DISABLED_PurgeUnusedColumnsOnlyRunsWhenAColumnIsAdded)
     RemoveClass(schemaXml, "Leaf");
     ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml, SchemaVersionChange::Major)) << LastIssue();
     const bool droppedOnDelete = !GetHelper().ColumnExists("ts_Base", "LeafOnly");
-    EXPECT_TRUE(droppedOnDelete) << "BUG: unused column survives a pure deletion although PurgeUnusedColumns is on (AlterTable early return).";
+    EXPECT_TRUE(droppedOnDelete);
     VerifyData(ExpectedDataChanges().DeleteInstancesOf("TestSchema:Leaf"));
 
     // Adding a column makes AlterTable reach its DROP loop. VerifyData reopened the file, so set the flag again.
@@ -886,7 +886,7 @@ TEST_F(MappingTests, DISABLED_PurgeUnusedColumnsOnlyRunsWhenAColumnIsAdded)
         <ECProperty propertyName="Added" typeName="string" />)xml");
     ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml)) << LastIssue();
     const bool droppedOnAdd = !GetHelper().ColumnExists("ts_Base", "LeafOnly");
-    EXPECT_TRUE(droppedOnAdd) << "BUG: still not dropped; the orphaned DbColumn stays in ec_Column so UpdateTable does not consider it deleted.";
+    EXPECT_TRUE(droppedOnAdd);
     VerifyData(ExpectedDataChanges().DeleteInstancesOf("TestSchema:Leaf"));
     }
 
@@ -1111,7 +1111,7 @@ TEST_F(MappingTests, DISABLED_InsertBaseClassDirectlyUnderJoinedTableRoot)
     LogOutcomeAndAcknowledgeRejection(stat);
     if (stat != SUCCESS)
         {
-        EXPECT_FALSE(GetLastUpdateIssues().empty()) << "BUG: import failed by assertion without reporting an issue.";
+        EXPECT_FALSE(GetLastUpdateIssues().empty());
         if (!GetLastUpdateIssues().empty())
             VerifyData();
         return;
@@ -1270,22 +1270,54 @@ TEST_F(MappingTests, AddPropertyToMixinImplementedOnlyInOtherSchema)
 // Struct Segment gains a member. The only user, ds:Sub.Cover, is not in the import.
 // RESULT: rejected with ECDb_0201 "struct property map has 1 member property maps, although the
 // struct has 2 properties". Mapping only re-verifies struct properties of classes in the imported
-// schemas, the validator then finds the stale map in DomainSchema. The same change with DomainSchema
-// in the import is accepted (ClassHierarchyUpdateTests.AddStructMember). A struct in a shared base
-// schema can therefore only grow when every dependent schema is imported along with it. GAP.
+// schemas, the validator then finds the stale map in DomainSchema. The issue is the validator's
+// internal message, not a designed rejection.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MappingTests, AddStructMemberUsedOnlyInOtherSchemaIsRejected)
+TEST_F(MappingTests, DISABLED_AddStructMemberUsedOnlyInOtherSchema)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetCrossSchemaMixinStructBaseline()));
+    const int subCount = CountWhereQualified("ds.Sub", "ECInstanceId IS NOT NULL");
+    ASSERT_LT(0, subCount);
 
     Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
     ReplaceInClass(schemaXml, "Segment", R"xml(<ECProperty propertyName="SegmentLabel" typeName="string" />)xml", R"xml(<ECProperty propertyName="SegmentLabel" typeName="string" />
         <ECProperty propertyName="SegmentWidth" typeName="double" />)xml");
-    ExpectRejected(schemaXml, "ECDb_0201");
+    const BentleyStatus stat = UpdateSchema(schemaXml);
+    LogOutcomeAndAcknowledgeRejection(stat);
+    EXPECT_EQ(SUCCESS, stat) << "Adding a struct member is rejected when the struct's only user is in a schema outside the import. " << LastIssue();
+    if (stat != SUCCESS)
+        {
+        VerifyData();
+        return;
+        }
 
-    // Importing the dependent schema along with it is the workaround.
-    EXPECT_EQ(SUCCESS, UpdateSchemas({{schemaXml, SchemaVersionChange::Minor}, {GetBaselineSchemaXml("DomainSchema"), SchemaVersionChange::Minor}})) << LastIssue();
+    EXPECT_EQ((int) BE_SQLITE_DONE, Exec("UPDATE ds.Sub SET Cover.SegmentWidth=1.5")) << "New struct member not writable on the user.";
+    EXPECT_EQ(subCount, CountWhereQualified("ds.Sub", "Cover.SegmentWidth=1.5"));
+    m_ecdb.AbandonChanges();
+    VerifyData();
+    }
+
+//---------------------------------------------------------------------------------------
+// Workaround for the test above: importing the dependent schema along with the struct's schema
+// is accepted (same as ClassHierarchyUpdateTests.AddStructMember). A struct in a shared base
+// schema can currently only grow when every dependent schema is imported along with it.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingTests, AddStructMemberUsedOnlyInOtherSchema_ImportingDependentSchemaWorks)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetCrossSchemaMixinStructBaseline()));
+    const int subCount = CountWhereQualified("ds.Sub", "ECInstanceId IS NOT NULL");
+    ASSERT_LT(0, subCount);
+
+    Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+    ReplaceInClass(schemaXml, "Segment", R"xml(<ECProperty propertyName="SegmentLabel" typeName="string" />)xml", R"xml(<ECProperty propertyName="SegmentLabel" typeName="string" />
+        <ECProperty propertyName="SegmentWidth" typeName="double" />)xml");
+    ASSERT_EQ(SUCCESS, UpdateSchemas({{schemaXml, SchemaVersionChange::Minor}, {GetBaselineSchemaXml("DomainSchema"), SchemaVersionChange::Minor}})) << LastIssue();
+
+    EXPECT_EQ((int) BE_SQLITE_DONE, Exec("UPDATE ds.Sub SET Cover.SegmentWidth=1.5"));
+    EXPECT_EQ(subCount, CountWhereQualified("ds.Sub", "Cover.SegmentWidth=1.5"));
+    m_ecdb.AbandonChanges();
     VerifyData();
     }
 
