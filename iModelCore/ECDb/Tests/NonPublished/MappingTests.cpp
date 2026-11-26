@@ -124,7 +124,7 @@ struct MappingTests : SchemaUpdateTestFixture
         return s_baseline;
         }
 
-    //! Like B1, but the siblings' Code differs in type.
+    //! TPH without shared columns, siblings with a same-named property that differs in type.
     static SchemaUpdateBaseline const& GetPhysicalColumnsMixedTypeBaseline()
         {
         static SchemaUpdateBaseline s_baseline("MappingGap_PhysicalColumnsMixedType", R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -299,6 +299,32 @@ struct MappingTests : SchemaUpdateTestFixture
         return s_baseline;
         }
 
+    //! Read-only property in a shared column, as connectors use for source identifiers.
+    static SchemaUpdateBaseline const& GetReadOnlyBaseline()
+        {
+        static SchemaUpdateBaseline s_baseline("MappingGap_ReadOnly", R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                <ECEntityClass typeName="Base">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns="ECDbMap.02.00.00">
+                            <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="SourceId" typeName="string" readOnly="True" />
+                    <ECProperty propertyName="Other" typeName="string" />
+                </ECEntityClass>
+            </ECSchema>)xml");
+        return s_baseline;
+        }
+
     //! PropertyMap IsNullable/IsUnique on a property that lands in a shared column.
     static SchemaUpdateBaseline const& GetConstrainedSharedColumnBaseline()
         {
@@ -403,6 +429,171 @@ struct MappingTests : SchemaUpdateTestFixture
         return s_baseline;
         }
 
+    //! Mixin ITagged(Tag) exists but is not applied yet. A1 and A2 hold their own Tag in different shared
+    //! columns (A1: Tag->ps2, X1->ps3; A2: X2->ps2, Tag->ps3). C has its own Tag.
+    static SchemaUpdateBaseline const& GetMixinBaseline()
+        {
+        static SchemaUpdateBaseline s_baseline("MappingGap_Mixin", R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+                <ECEntityClass typeName="Base">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns="ECDbMap.02.00.00">
+                            <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="ITagged" modifier="Abstract">
+                    <ECCustomAttributes>
+                        <IsMixin xmlns="CoreCustomAttributes.01.00.00">
+                            <AppliesToEntityClass>Base</AppliesToEntityClass>
+                        </IsMixin>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Tag" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="A">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="A1" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="A1">
+                    <BaseClass>A</BaseClass>
+                    <ECProperty propertyName="Tag" typeName="string" />
+                    <ECProperty propertyName="X1" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="A2">
+                    <BaseClass>A</BaseClass>
+                    <ECProperty propertyName="X2" typeName="string" />
+                    <ECProperty propertyName="Tag" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="C">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="Tag" typeName="string" />
+                </ECEntityClass>
+            </ECSchema>)xml");
+        return s_baseline;
+        }
+
+    //! Two schemas. TestSchema owns the TPH root, a mixin and a struct; DomainSchema has the only class
+    //! that implements the mixin and uses the struct. Updates import TestSchema alone.
+    static SchemaUpdateBaseline const& GetCrossSchemaMixinStructBaseline()
+        {
+        static SchemaUpdateBaseline s_baseline("MappingGap_CrossSchemaMixinStruct", bvector<Utf8String>{
+            R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+                <ECStructClass typeName="Segment">
+                    <ECProperty propertyName="SegmentLabel" typeName="string" />
+                </ECStructClass>
+                <ECEntityClass typeName="Base">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns="ECDbMap.02.00.00">
+                            <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="ITagged" modifier="Abstract">
+                    <ECCustomAttributes>
+                        <IsMixin xmlns="CoreCustomAttributes.01.00.00">
+                            <AppliesToEntityClass>Base</AppliesToEntityClass>
+                        </IsMixin>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Label" typeName="string" />
+                </ECEntityClass>
+            </ECSchema>)xml",
+            R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="DomainSchema" alias="ds" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="TestSchema" version="01.00.00" alias="ts"/>
+                <ECEntityClass typeName="Sub">
+                    <BaseClass>ts:Base</BaseClass>
+                    <BaseClass>ts:ITagged</BaseClass>
+                    <ECProperty propertyName="Code" typeName="string" />
+                    <ECStructProperty propertyName="Cover" typeName="ts:Segment" />
+                </ECEntityClass>
+            </ECSchema>)xml"});
+        return s_baseline;
+        }
+
+    //! BIS-like root with a current timestamp property in its own column; subclasses share columns in the same table.
+    static SchemaUpdateBaseline const& GetTimeStampBaseline()
+        {
+        static SchemaUpdateBaseline s_baseline("MappingGap_TimeStamp", R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+                <ECEntityClass typeName="Base">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns="ECDbMap.02.00.00">
+                            <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                        <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00.00">
+                            <PropertyName>LastMod</PropertyName>
+                        </ClassHasCurrentTimeStampProperty>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True">
+                        <ECCustomAttributes>
+                            <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
+                                <DateTimeKind>Utc</DateTimeKind>
+                            </DateTimeInfo>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="Code" typeName="string" />
+                    <ECProperty propertyName="Other" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sibling">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+            </ECSchema>)xml");
+        return s_baseline;
+        }
+
+    //! Shared columns with a class to delete and re-add, and a sibling that keeps its values.
+    static SchemaUpdateBaseline const& GetColumnReuseBaseline()
+        {
+        static SchemaUpdateBaseline s_baseline("MappingGap_ColumnReuse", R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                <ECEntityClass typeName="Base">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns="ECDbMap.02.00.00">
+                            <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                            <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Gone">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="P" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Keep">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="K" typeName="string" />
+                </ECEntityClass>
+            </ECSchema>)xml");
+        return s_baseline;
+        }
+
     //! True if a SQLite index of that name exists.
     bool IndexExists(Utf8CP indexName) const
         {
@@ -484,14 +675,46 @@ struct MappingTests : SchemaUpdateTestFixture
             return -1;
         return stmt.Step() == BE_SQLITE_ROW ? stmt.GetValueInt(0) : -1;
         }
+
+    //! Like CountWhere, for a class in any schema, e.g. "ds.Sub".
+    int CountWhereQualified(Utf8CP qualifiedClassName, Utf8CP condition) const
+        {
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT COUNT(*) FROM ONLY %s WHERE %s", qualifiedClassName, condition).c_str()))
+            return -1;
+        return stmt.Step() == BE_SQLITE_ROW ? stmt.GetValueInt(0) : -1;
+        }
+
+    //! First text value of a single-column SELECT, empty if none.
+    Utf8String FirstText(Utf8CP ecsql) const
+        {
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql) || stmt.Step() != BE_SQLITE_ROW || stmt.IsValueNull(0))
+            return Utf8String();
+        return stmt.GetValueText(0);
+        }
+
+    //! Rows of PRAGMA integrity_check(check_diverged_prop_maps), one per line as
+    //! "Derived/Base.Property: baseColumn -> divergedColumn". Empty when the maps are consistent.
+    Utf8String DivergedPropertyMaps() const
+        {
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "PRAGMA integrity_check(check_diverged_prop_maps)"))
+            return "<prepare failed>";
+
+        Utf8String rows;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            rows.append(Utf8PrintfString("%s/%s.%s: %s -> %s\n", stmt.GetValueText(2), stmt.GetValueText(4), stmt.GetValueText(5), stmt.GetValueText(6), stmt.GetValueText(7)));
+        return rows;
+        }
     };
 
 //***************************************************************************************
-// Group A: rows without an overflow row
+// Rows without an overflow row
 //***************************************************************************************
 
 //---------------------------------------------------------------------------------------
-// A1. The update adds Sub.P1. Base already holds the two shared columns, so P1 can only go to
+// The update adds Sub.P1. Base already holds the two shared columns, so P1 can only go to
 // the overflow table. The baseline Sub rows had no overflow row. RESULT: the import inserts the
 // missing overflow rows (3 rows right after UpdateSchema), so the UPDATE reaches all instances.
 // The harness write probe in VerifyData is the control for new instances.
@@ -509,14 +732,14 @@ TEST_F(MappingTests, UpdateNewOverflowPropertyOnPreExistingRows)
     ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml)) << LastIssue();
 
     EXPECT_EQ((int) BE_SQLITE_DONE, Exec("UPDATE ts.Sub SET P1='updated'"));
-    EXPECT_EQ(subCount, CountWhere("Sub", "P1='updated'")) << "A1: UPDATE of a new overflow property on pre-existing rows is lost.";
+    EXPECT_EQ(subCount, CountWhere("Sub", "P1='updated'")) << "UPDATE of a new overflow property on pre-existing rows is lost.";
 
     m_ecdb.AbandonChanges();
     VerifyData();
     }
 
 //---------------------------------------------------------------------------------------
-// A2. The same mechanism through the RemapManager. A1 moves up to Base. Its shared column is
+// The same mechanism through the RemapManager. A1 moves up to Base. Its shared column is
 // taken by B.Bx in a sibling, so Base.A1 is placed in overflow and the values of A have to
 // move ps4 -> overflow. RESULT: overflow rows are inserted for all 9 instances before the data
 // move, A1 survives. MovePropertyToOverflow in SchemaRemapTests covers the already-in-overflow case.
@@ -536,8 +759,8 @@ TEST_F(MappingTests, RemapIntoOverflowForClassWithoutOverflowRow)
     }
 
 //---------------------------------------------------------------------------------------
-// A4. A1 in the BIS layout: joined table per direct subclass, shared columns on the subclasses
-// only, overflow hanging off the joined table.
+// The overflow-row case in the BIS layout: joined table per direct subclass, shared columns on
+// the subclasses only, overflow hanging off the joined table.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(MappingTests, UpdateNewOverflowPropertyOnPreExistingRows_JoinedTable)
@@ -552,18 +775,18 @@ TEST_F(MappingTests, UpdateNewOverflowPropertyOnPreExistingRows_JoinedTable)
     ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml)) << LastIssue();
 
     EXPECT_EQ((int) BE_SQLITE_DONE, Exec("UPDATE ts.Pipe SET Diameter=2.5"));
-    EXPECT_EQ(pipeCount, CountWhere("Pipe", "Diameter=2.5")) << "A4: same as A1 with a joined table.";
+    EXPECT_EQ(pipeCount, CountWhere("Pipe", "Diameter=2.5")) << "UPDATE of a new overflow property on pre-existing rows is lost (joined table).";
 
     m_ecdb.AbandonChanges();
     VerifyData();
     }
 
 //***************************************************************************************
-// Group B: hierarchies with physical columns
+// Hierarchies with physical columns
 //***************************************************************************************
 
 //---------------------------------------------------------------------------------------
-// B1. TPH without ShareColumns. A.Code and B.Code are physical columns (the same column, reused
+// TPH without ShareColumns. A.Code and B.Code are physical columns (the same column, reused
 // by name because the types match). Code moves up to Base. The remap cleanup skips physical
 // columns, so the old mappings stay. Unknown: rejected, a second column, or values kept.
 // @bsimethod
@@ -579,12 +802,12 @@ TEST_F(MappingTests, MovePropertyUpWithoutSharedColumns)
     ReplaceInClass(schemaXml, "B", R"xml(<ECProperty propertyName="Code" typeName="string" />)xml", "");
     const BentleyStatus stat = UpdateSchema(schemaXml);
     LogOutcomeAndAcknowledgeRejection(stat);
-    EXPECT_EQ(SUCCESS, stat) << "B1: moving a property up in a hierarchy without shared columns is rejected.";
+    EXPECT_EQ(SUCCESS, stat) << "Moving a property up in a hierarchy without shared columns is rejected.";
     VerifyData();
     }
 
 //---------------------------------------------------------------------------------------
-// B1b. Same as B1 but the siblings' Code differs in type, so they sit in two physical columns
+// Same, but the siblings' Code differs in type, so they sit in two physical columns
 // (ts_Base.Code and ts_Base.Code1). Base.Code string has to reconcile with B whose Code was int.
 // RESULT: accepted. Base.Code is mapped to ts_Base.Code, so A keeps its strings, but B's ints in
 // Code1 are never moved and B.Code reads NULL for every existing instance. Data loss on an accepted
@@ -608,13 +831,13 @@ TEST_F(MappingTests, DISABLED_MovePropertyUpWithoutSharedColumns_SiblingsDifferI
         return;
         }
 
-    EXPECT_EQ(0, CountWhere("B", "Code IS NULL")) << "B1b BUG: import accepted, B's Code values (int, column Code1) were dropped instead of moved to Base.Code.";
+    EXPECT_EQ(0, CountWhere("B", "Code IS NULL")) << "BUG: import accepted, B's Code values (int, column Code1) were dropped instead of moved to Base.Code.";
     // B.Code was int and is now string: it has to read back as the int's text, or the import should have refused.
     VerifyData(ExpectedDataChanges().ConvertValuesOf("TestSchema:B", "Code", [] (Utf8StringCR v) { return Utf8String("\"") + v + "\""; }));
     }
 
 //---------------------------------------------------------------------------------------
-// B2. BIS layout: the root's own properties have physical columns and the subclasses share.
+// BIS layout: the root's own properties have physical columns and the subclasses share.
 // Code moves from Sub (shared js column) up to Root (new physical column). Check the values follow.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -632,11 +855,11 @@ TEST_F(MappingTests, MovePropertyFromSharedSubclassToPhysicalRoot)
     }
 
 //***************************************************************************************
-// Group C: what deletions leave behind
+// What deletions leave behind
 //***************************************************************************************
 
 //---------------------------------------------------------------------------------------
-// C3. PurgeUnusedColumns is on. Deleting Leaf leaves its physical column LeafOnly unused.
+// PurgeUnusedColumns is on. Deleting Leaf leaves its physical column LeafOnly unused.
 // RESULT: the column is never dropped, neither by the deleting import nor by a later import that
 // adds a column. Two reasons in DbSchemaPersistenceManager: AlterTable returns before the DROP
 // loop when columnsToAdd is empty, and UpdateTable only lists columns that are missing from the
@@ -654,7 +877,7 @@ TEST_F(MappingTests, DISABLED_PurgeUnusedColumnsOnlyRunsWhenAColumnIsAdded)
     RemoveClass(schemaXml, "Leaf");
     ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml, SchemaVersionChange::Major)) << LastIssue();
     const bool droppedOnDelete = !GetHelper().ColumnExists("ts_Base", "LeafOnly");
-    EXPECT_TRUE(droppedOnDelete) << "C3 BUG: unused column survives a pure deletion although PurgeUnusedColumns is on (AlterTable early return).";
+    EXPECT_TRUE(droppedOnDelete) << "BUG: unused column survives a pure deletion although PurgeUnusedColumns is on (AlterTable early return).";
     VerifyData(ExpectedDataChanges().DeleteInstancesOf("TestSchema:Leaf"));
 
     // Adding a column makes AlterTable reach its DROP loop. VerifyData reopened the file, so set the flag again.
@@ -663,12 +886,12 @@ TEST_F(MappingTests, DISABLED_PurgeUnusedColumnsOnlyRunsWhenAColumnIsAdded)
         <ECProperty propertyName="Added" typeName="string" />)xml");
     ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml)) << LastIssue();
     const bool droppedOnAdd = !GetHelper().ColumnExists("ts_Base", "LeafOnly");
-    EXPECT_TRUE(droppedOnAdd) << "C3 BUG: still not dropped; the orphaned DbColumn stays in ec_Column so UpdateTable does not consider it deleted.";
+    EXPECT_TRUE(droppedOnAdd) << "BUG: still not dropped; the orphaned DbColumn stays in ec_Column so UpdateTable does not consider it deleted.";
     VerifyData(ExpectedDataChanges().DeleteInstancesOf("TestSchema:Leaf"));
     }
 
 //---------------------------------------------------------------------------------------
-// C4. Deleting a class mapped to its own table with rows. DeleteClass purges instances only for
+// Deleting a class mapped to its own table with rows. DeleteClass purges instances only for
 // TablePerHierarchy. If the table and rows stay, re-adding a class with the same name shows them again.
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -682,22 +905,22 @@ TEST_F(MappingTests, DeleteOwnTableClassWithRows)
     RemoveClass(schemaXml, "Gone");
     ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml, SchemaVersionChange::Major)) << LastIssue();
     const int rows = CountRows("ts_Gone");
-    EXPECT_NE(goneCount, rows) << "C4: OwnTable class deleted, its instances stay in an orphaned table.";
+    EXPECT_NE(goneCount, rows) << "OwnTable class deleted, its instances stay in an orphaned table.";
     VerifyData(ExpectedDataChanges().DeleteInstancesOf("TestSchema:Gone"));
 
     // Re-add the class. If the rows survived they are visible again through the new class.
     ASSERT_EQ(SUCCESS, UpdateSchema(GetBaselineSchemaXml())) << LastIssue();
     const int back = CountWhere("Gone", "ECInstanceId IS NOT NULL");
-    EXPECT_EQ(0, back) << "C4: rows of the deleted class are visible through the re-added class.";
+    EXPECT_EQ(0, back) << "Rows of the deleted class are visible through the re-added class.";
     VerifyData(ExpectedDataChanges().DeleteInstancesOf("TestSchema:Gone"));
     }
 
 //***************************************************************************************
-// Group D: incoming vs. stored state in the same import
+// Incoming vs. stored state in the same import
 //***************************************************************************************
 
 //---------------------------------------------------------------------------------------
-// D5. Mid gets sealed in the same import that deletes its only subclass MidLeaf. UpdateClass
+// Mid gets sealed in the same import that deletes its only subclass MidLeaf. UpdateClass
 // checks the incoming class's derived classes, so this should pass. Recorded because the
 // class-deletion check (0378) looks at the stored schema instead.
 // @bsimethod
@@ -711,12 +934,12 @@ TEST_F(MappingTests, SealClassWhoseSubclassIsDeletedInSameImport)
     ReplaceInSchema(schemaXml, R"xml(<ECEntityClass typeName="Mid">)xml", R"xml(<ECEntityClass typeName="Mid" modifier="Sealed">)xml");
     const BentleyStatus stat = UpdateSchema(schemaXml, SchemaVersionChange::Major);
     LogOutcomeAndAcknowledgeRejection(stat);
-    EXPECT_EQ(SUCCESS, stat) << "D5: sealing uses the stored subclass list.";
+    EXPECT_EQ(SUCCESS, stat) << "Sealing uses the stored subclass list.";
     VerifyData(stat == SUCCESS ? ExpectedDataChanges().DeleteInstancesOf("TestSchema:MidLeaf") : ExpectedDataChanges());
     }
 
 //---------------------------------------------------------------------------------------
-// D5b. Parent and child deleted together. DeleteClass asks the stored schema for subclasses, so the
+// Parent and child deleted together. DeleteClass asks the stored schema for subclasses, so the
 // parent still "has subclasses" and the import is rejected with ECDb_0378 although the child goes
 // away in the same import. Order of names does not matter (both AParent>ZChild and ZParent>AChild
 // are in the baseline; AParent is reported first). A connector has to delete the child in one import
@@ -749,11 +972,11 @@ TEST_F(MappingTests, DeleteParentAndChildInSameImport)
     }
 
 //***************************************************************************************
-// Group F: column limits
+// Column limits
 //***************************************************************************************
 
 //---------------------------------------------------------------------------------------
-// F4. ClassMapColumnFactory treats 63 columns as the most a base table holds for one property.
+// ClassMapColumnFactory treats 63 columns as the most a base table holds for one property.
 // A struct with 64 members goes to overflow regardless of MaxSharedColumnsBeforeOverflow=200.
 // No update; the harness fills and reads the struct, VerifyData checks the round trip.
 // @bsimethod
@@ -761,12 +984,12 @@ TEST_F(MappingTests, DeleteParentAndChildInSameImport)
 TEST_F(MappingTests, StructWithMoreThan63MembersAlwaysGoesToOverflow)
     {
     ASSERT_EQ(SUCCESS, SetupFromBaseline(GetWideStructBaseline()));
-    EXPECT_STREQ("ts_Base_Overflow", GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "Sub", "S.M00")).GetTableName().c_str()) << "F4: expected the 64-member struct in overflow.";
+    EXPECT_STREQ("ts_Base_Overflow", GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "Sub", "S.M00")).GetTableName().c_str()) << "Expected the 64-member struct in overflow.";
     VerifyData();
     }
 
 //---------------------------------------------------------------------------------------
-// F2. CheckForPerTableColumnLimit groups per class and table, so a shared overflow table can
+// CheckForPerTableColumnLimit groups per class and table, so a shared overflow table can
 // collect more columns than any single class uses. Records the per-class vs. per-table counts
 // for a small case to make the gap visible; reaching the 2000 limit takes thousands of properties.
 // @bsimethod
@@ -791,11 +1014,11 @@ TEST_F(MappingTests, PerTableColumnLimitIsCheckedPerClassNotPerTable)
     }
 
 //***************************************************************************************
-// Group G: PropertyMap on shared columns
+// PropertyMap on shared columns
 //***************************************************************************************
 
 //---------------------------------------------------------------------------------------
-// G4'. IsNullable=False and IsUnique=True on a property in a shared column are only logged as
+// IsNullable=False and IsUnique=True on a property in a shared column are only logged as
 // warnings by ClassMapColumnFactory::AllocateSharedColumn. CONFIRMED: neither is enforced,
 // duplicates and NULLs go in with BE_SQLITE_DONE. The schema author gets no error, only a log
 // warning during import. Documented behaviour; the test pins it.
@@ -819,7 +1042,7 @@ TEST_F(MappingTests, PropertyMapNotNullAndUniqueOnSharedColumnAreNotEnforced)
     }
 
 //---------------------------------------------------------------------------------------
-// G5. A new property with PropertyMap ColumnName in a class with shared columns is rejected. The
+// A new property with PropertyMap ColumnName in a class with shared columns is rejected. The
 // shared-column check (ECDb_0041) is never reached: the earlier general check fires first and
 // reports ECDb_0079 "Only ECClasses with map strategy 'ExistingTable' may specify a column name".
 // @bsimethod
@@ -837,7 +1060,7 @@ TEST_F(MappingTests, PropertyMapColumnNameOnSharedColumnIsRejected)
     }
 
 //---------------------------------------------------------------------------------------
-// G5. Same with Collation: here the shared-column specific check does fire (ECDb_0042).
+// Same with Collation: here the shared-column specific check does fire (ECDb_0042).
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(MappingTests, PropertyMapCollationOnSharedColumnIsRejected)
@@ -853,7 +1076,24 @@ TEST_F(MappingTests, PropertyMapCollationOnSharedColumnIsRejected)
     }
 
 //---------------------------------------------------------------------------------------
-// J1. An abstract class is inserted between the JoinedTablePerDirectSubclass root and its direct
+// Deleting a read-only property stored in a shared column.
+// Already reported by Affan a month back.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingTests, DISABLED_DeleteReadOnlyPropertyInSharedColumn)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetReadOnlyBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "Sub", R"xml(<ECProperty propertyName="SourceId" typeName="string" readOnly="True" />)xml", "");
+    const BentleyStatus stat = UpdateSchema(schemaXml, SchemaVersionChange::Major);
+    LogOutcomeAndAcknowledgeRejection(stat);
+    EXPECT_EQ(SUCCESS, stat) << "A read-only property cannot be deleted because the value-clearing ECSQL UPDATE is refused for read-only properties.";
+    VerifyData();
+    }
+
+//---------------------------------------------------------------------------------------
+// An abstract class is inserted between the JoinedTablePerDirectSubclass root and its direct
 // subclass. The joined table would now belong to the inserted class. RESULT: assertion failure
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -871,25 +1111,21 @@ TEST_F(MappingTests, DISABLED_InsertBaseClassDirectlyUnderJoinedTableRoot)
     LogOutcomeAndAcknowledgeRejection(stat);
     if (stat != SUCCESS)
         {
-        EXPECT_FALSE(GetLastUpdateIssues().empty()) << "J1 BUG: import failed by assertion without reporting an issue.";
+        EXPECT_FALSE(GetLastUpdateIssues().empty()) << "BUG: import failed by assertion without reporting an issue.";
         if (!GetLastUpdateIssues().empty())
             VerifyData();
         return;
         }
 
     // Release path (check in PropertyMapContainer::Insert is debug-only): where did Geometric end up?
-    printf("J1 accepted. Geometric.G1 -> %s, Spatial.Origin -> %s, Element.Name -> %s\n",
-           Mapping("Geometric", "G1").c_str(), Mapping("Spatial", "Origin").c_str(), Mapping("Element", "Name").c_str());
-    printf("J1 ts_Geometric rows: %d, ts_Spatial rows: %d\n", CountRows("ts_Geometric"), CountRows("ts_Spatial"));
-    printf("J1 SELECT G1 FROM Pipe: %s\n", Dump("SELECT ECInstanceId, G1 FROM ts.Pipe").c_str());
-    EXPECT_STRNE("ts_Geometric.js1", Mapping("Geometric", "G1").c_str()) << "J1: G1 still mapped to the old joined table although Geometric no longer owns one.";
-    EXPECT_EQ((int) BE_SQLITE_DONE, Exec("UPDATE ts.Pipe SET Origin='o'")) << "J1: new property of the inserted class not writable for existing Pipe rows.";
+    EXPECT_STRNE("ts_Geometric.js1", Mapping("Geometric", "G1").c_str()) << "G1 still mapped to the old joined table although Geometric no longer owns one.";
+    EXPECT_EQ((int) BE_SQLITE_DONE, Exec("UPDATE ts.Pipe SET Origin='o'")) << "New property of the inserted class not writable for existing Pipe rows.";
     m_ecdb.AbandonChanges();
     VerifyData();
     }
 
 //---------------------------------------------------------------------------------------
-// J2. B1b through base-class insertion: Coded(Code string) is inserted above B whose own Code is
+// Physical-column data loss through base-class insertion: Coded(Code string) is inserted above B whose own Code is
 // int in a physical column (ts_Base.Code1). RESULT: accepted, B.Code reads NULL for all existing
 // instances. Complements the test DISABLED_MovePropertyUpWithoutSharedColumns_SiblingsDifferInType.
 // @bsimethod
@@ -913,8 +1149,278 @@ TEST_F(MappingTests, DISABLED_InsertBaseClassWithSameNamedPropertyOverPhysicalCo
         return;
         }
 
-    EXPECT_EQ(0, CountWhere("B", "Code IS NULL")) << "J2: accepted, but B's int Code values were not carried over to Coded.Code.";
+    EXPECT_EQ(0, CountWhere("B", "Code IS NULL")) << "Accepted, but B's int Code values were not carried over to Coded.Code.";
     VerifyData(ExpectedDataChanges().ConvertValuesOf("TestSchema:B", "Code", [] (Utf8StringCR v) { return Utf8String("\"") + v + "\""; }));
+    }
+
+//---------------------------------------------------------------------------------------
+// ITagged is added to A. A1 and A2 already declare Tag in different shared columns and keep
+// their declarations as overrides. RESULT: accepted. A.Tag -> ps2 (A1's column), A2.Tag stays in
+// ps3. No data is lost, but the maps diverge; check_diverged_prop_maps reports A2/A.Tag.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingTests, DISABLED_AddMixinToClassWhoseSubclassesDeclareItsPropertyInDifferentColumns)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetMixinBaseline()));
+    const Utf8String a1Before = Mapping("A1", "Tag"), a2Before = Mapping("A2", "Tag");
+    ASSERT_STRNE(a1Before.c_str(), a2Before.c_str()) << "Baseline precondition: A1.Tag and A2.Tag must sit in different columns.";
+    ASSERT_STREQ("", DivergedPropertyMaps().c_str()) << "Baseline precondition: no diverged property maps before the import.";
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "A", "<BaseClass>Base</BaseClass>", R"xml(<BaseClass>Base</BaseClass>
+        <BaseClass>ITagged</BaseClass>)xml");
+    const BentleyStatus stat = UpdateSchema(schemaXml);
+    LogOutcomeAndAcknowledgeRejection(stat);
+    EXPECT_EQ(SUCCESS, stat) << LastIssue();
+    if (stat == SUCCESS)
+        {
+        EXPECT_EQ(0, CountWhere("A1", "Tag IS NULL"));
+        EXPECT_EQ(0, CountWhere("A2", "Tag IS NULL"));
+        // Every class in the hierarchy has to agree on the column of Tag.
+        EXPECT_STREQ(Mapping("A", "Tag").c_str(), Mapping("A1", "Tag").c_str());
+        EXPECT_STREQ(Mapping("A", "Tag").c_str(), Mapping("A2", "Tag").c_str());
+        EXPECT_STREQ("", DivergedPropertyMaps().c_str());
+        // The polymorphic read through A has to agree with the read through A2.
+        EXPECT_STREQ(Dump("SELECT ECInstanceId, Tag FROM ONLY ts.A2 ORDER BY ECInstanceId").c_str(), Dump("SELECT ECInstanceId, Tag FROM ts.A WHERE ECClassId IS (ts.A2) ORDER BY ECInstanceId").c_str());
+        }
+    VerifyData();
+    }
+
+//---------------------------------------------------------------------------------------
+// Same, but A1 and A2 drop their own Tag in the same import, so Tag comes only from the mixin.
+// RESULT: accepted, Tag lands in a new column ps4 for A, A1 and A2, values moved. OK.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingTests, AddMixinToClassAndRemoveSubclassPropertiesItReplaces)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetMixinBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "A", "<BaseClass>Base</BaseClass>", R"xml(<BaseClass>Base</BaseClass>
+        <BaseClass>ITagged</BaseClass>)xml");
+    ReplaceInClass(schemaXml, "A1", R"xml(<ECProperty propertyName="Tag" typeName="string" />)xml", "");
+    ReplaceInClass(schemaXml, "A2", R"xml(<ECProperty propertyName="Tag" typeName="string" />)xml", "");
+    const BentleyStatus stat = UpdateSchema(schemaXml);
+    LogOutcomeAndAcknowledgeRejection(stat);
+    EXPECT_EQ(SUCCESS, stat) << LastIssue();
+    if (stat == SUCCESS)
+        {
+        EXPECT_EQ(0, CountWhere("A1", "Tag IS NULL")) << "A1 lost its Tag values.";
+        EXPECT_EQ(0, CountWhere("A2", "Tag IS NULL")) << "A2 lost its Tag values.";
+        }
+    VerifyData();
+    }
+
+//---------------------------------------------------------------------------------------
+// ITagged is added to C, whose own Tag becomes an override of the mixin property. Control for the
+// two tests above.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingTests, AddMixinToClassThatDeclaresItsProperty)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetMixinBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "C", "<BaseClass>Base</BaseClass>", R"xml(<BaseClass>Base</BaseClass>
+        <BaseClass>ITagged</BaseClass>)xml");
+    const BentleyStatus stat = UpdateSchema(schemaXml);
+    LogOutcomeAndAcknowledgeRejection(stat);
+    EXPECT_EQ(SUCCESS, stat) << LastIssue();
+    if (stat == SUCCESS)
+        EXPECT_EQ(0, CountWhere("C", "Tag IS NULL")) << "C lost its Tag values.";
+    VerifyData();
+    }
+
+//***************************************************************************************
+// Changes in a referenced schema whose dependents are not in the import. Mapping only
+// visits classes of the imported schemas and their in-memory derived classes; mixin properties
+// and struct members have no TPH base map to clone at load time.
+//***************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// ITagged gains Tag. The only implementer, ds:Sub, is not in the import.
+// RESULT: accepted, Tag is mapped and writable on ds:Sub. OK (unlike the struct-member case below).
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingTests, AddPropertyToMixinImplementedOnlyInOtherSchema)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetCrossSchemaMixinStructBaseline()));
+    const int subCount = CountWhereQualified("ds.Sub", "ECInstanceId IS NOT NULL");
+    ASSERT_LT(0, subCount);
+
+    Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+    ReplaceInClass(schemaXml, "ITagged", R"xml(<ECProperty propertyName="Label" typeName="string" />)xml", R"xml(<ECProperty propertyName="Label" typeName="string" />
+        <ECProperty propertyName="Tag" typeName="string" />)xml");
+    const BentleyStatus stat = UpdateSchema(schemaXml);
+    LogOutcomeAndAcknowledgeRejection(stat);
+    EXPECT_EQ(SUCCESS, stat) << "Adding a property to a mixin fails when its implementer is in a schema outside the import. " << LastIssue();
+    if (stat != SUCCESS)
+        {
+        VerifyData();
+        return;
+        }
+
+    EXPECT_EQ((int) BE_SQLITE_DONE, Exec("UPDATE ds.Sub SET Tag='t'")) << "New mixin property not writable on the implementer.";
+    EXPECT_EQ(subCount, CountWhereQualified("ds.Sub", "Tag='t'"));
+    m_ecdb.AbandonChanges();
+    VerifyData();
+    }
+
+//---------------------------------------------------------------------------------------
+// Struct Segment gains a member. The only user, ds:Sub.Cover, is not in the import.
+// RESULT: rejected with ECDb_0201 "struct property map has 1 member property maps, although the
+// struct has 2 properties". Mapping only re-verifies struct properties of classes in the imported
+// schemas, the validator then finds the stale map in DomainSchema. The same change with DomainSchema
+// in the import is accepted (ClassHierarchyUpdateTests.AddStructMember). A struct in a shared base
+// schema can therefore only grow when every dependent schema is imported along with it. GAP.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingTests, AddStructMemberUsedOnlyInOtherSchemaIsRejected)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetCrossSchemaMixinStructBaseline()));
+
+    Utf8String schemaXml = GetBaselineSchemaXml("TestSchema");
+    ReplaceInClass(schemaXml, "Segment", R"xml(<ECProperty propertyName="SegmentLabel" typeName="string" />)xml", R"xml(<ECProperty propertyName="SegmentLabel" typeName="string" />
+        <ECProperty propertyName="SegmentWidth" typeName="double" />)xml");
+    ExpectRejected(schemaXml, "ECDb_0201");
+
+    // Importing the dependent schema along with it is the workaround.
+    EXPECT_EQ(SUCCESS, UpdateSchemas({{schemaXml, SchemaVersionChange::Minor}, {GetBaselineSchemaXml("DomainSchema"), SchemaVersionChange::Minor}})) << LastIssue();
+    VerifyData();
+    }
+
+//---------------------------------------------------------------------------------------
+// Deleting Sub.Other runs "UPDATE ts.Sub SET Other=NULL" on ts_Base, which fires the LastMod
+// trigger for every Sub row (3 of 3 stamped).
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingTests, DISABLED_DeletingSharedColumnPropertyBumpsCurrentTimeStamp)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetTimeStampBaseline()));
+    const Utf8String before = Dump("SELECT ECInstanceId, LastMod FROM ts.Sub ORDER BY ECInstanceId");
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "Sub", R"xml(<ECProperty propertyName="Other" typeName="string" />)xml", "");
+    ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml, SchemaVersionChange::Major)) << LastIssue();
+
+    const Utf8String after = Dump("SELECT ECInstanceId, LastMod FROM ts.Sub ORDER BY ECInstanceId");
+    EXPECT_STREQ(before.c_str(), after.c_str()) << "Deleting a property stamped LastMod on every instance of the class.";
+    VerifyData();
+    }
+
+//---------------------------------------------------------------------------------------
+// Code moves from Sub and Sibling (shared columns) up to Base (new physical column). All three
+// classes now have Base.Code, but only the rows whose storage is touched by the data-moving
+// UPDATE on ts_Base are stamped by the LastMod trigger. RESULT: every Sub and Sibling row is
+// stamped, no Base row is. Whether a schema import should bump LastMod at all is open; what the
+// test pins is that it has to be the same answer for every instance the change applies to.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingTests, DISABLED_MovingPropertyUpBumpsCurrentTimeStamp)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetTimeStampBaseline()));
+    const Utf8String baseBefore = Dump("SELECT ECInstanceId, LastMod FROM ONLY ts.Base ORDER BY ECInstanceId");
+    const Utf8String subBefore = Dump("SELECT ECInstanceId, LastMod FROM ONLY ts.Sub ORDER BY ECInstanceId");
+    const Utf8String siblingBefore = Dump("SELECT ECInstanceId, LastMod FROM ONLY ts.Sibling ORDER BY ECInstanceId");
+    ASSERT_LT(0, CountWhere("Base", "ECInstanceId IS NOT NULL"));
+    ASSERT_LT(0, CountWhere("Sub", "ECInstanceId IS NOT NULL"));
+    ASSERT_LT(0, CountWhere("Sibling", "ECInstanceId IS NOT NULL"));
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "Base", R"xml(<ECProperty propertyName="Name" typeName="string" />)xml", R"xml(<ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Code" typeName="string" />)xml");
+    ReplaceInClass(schemaXml, "Sub", R"xml(<ECProperty propertyName="Code" typeName="string" />)xml", "");
+    ReplaceInClass(schemaXml, "Sibling", R"xml(<ECProperty propertyName="Code" typeName="string" />)xml", "");
+    ASSERT_EQ(SUCCESS, UpdateSchema(schemaXml)) << LastIssue();
+
+    const bool baseStamped = baseBefore != Dump("SELECT ECInstanceId, LastMod FROM ONLY ts.Base ORDER BY ECInstanceId");
+    const bool subStamped = subBefore != Dump("SELECT ECInstanceId, LastMod FROM ONLY ts.Sub ORDER BY ECInstanceId");
+    const bool siblingStamped = siblingBefore != Dump("SELECT ECInstanceId, LastMod FROM ONLY ts.Sibling ORDER BY ECInstanceId");
+
+    // Base.Code now applies to every instance of the hierarchy, so either all of them or none of them
+    // may be stamped. Current behaviour: only the classes whose values were moved (Sub, Sibling).
+    EXPECT_EQ(subStamped, siblingStamped) << "Sub stamped: " << subStamped << ", Sibling stamped: " << siblingStamped;
+    EXPECT_EQ(baseStamped, subStamped) << "LastMod follows the storage move, not the schema change. Base stamped: " << baseStamped << ", Sub stamped: " << subStamped << ", Sibling stamped: " << siblingStamped;
+    VerifyData();
+    }
+
+//***************************************************************************************
+// Hierarchy changes with indexes and column reuse
+//***************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// Coded (SourceId) is inserted between Base and Sub. Sub keeps its DbIndexList on SourceId,
+// now inherited. The remap moves SourceId to another shared column; CreateOrUpdateIndexesInDb
+// runs before the data transform. RESULT: SourceId stays in ps1 (Coded takes the column Sub already
+// used), the unique index survives and still rejects duplicates. OK. A remap to another column is
+// not reached in this shape.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingTests, InsertBaseClassRemapsIndexedProperty)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetIndexedBaseline()));
+    const Utf8String colBefore = Mapping("Sub", "SourceId");
+    const Utf8String existing = FirstText("SELECT SourceId FROM ts.Sub WHERE SourceId IS NOT NULL LIMIT 1");
+    ASSERT_FALSE(existing.empty());
+
+    Utf8String schemaXml = GetBaselineSchemaXml();
+    ReplaceInClass(schemaXml, "Sub", "<BaseClass>Base</BaseClass>", "<BaseClass>Coded</BaseClass>");
+    ReplaceInClass(schemaXml, "Sub", R"xml(<ECProperty propertyName="SourceId" typeName="string" />)xml", "");
+    AppendToSchema(schemaXml, R"xml(<ECEntityClass typeName="Coded" modifier="Abstract">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="SourceId" typeName="string" />
+                </ECEntityClass>)xml");
+    const BentleyStatus stat = UpdateSchema(schemaXml);
+    LogOutcomeAndAcknowledgeRejection(stat);
+    EXPECT_EQ(SUCCESS, stat) << LastIssue();
+    if (stat != SUCCESS)
+        {
+        VerifyData();
+        return;
+        }
+
+    EXPECT_TRUE(IndexExists("uix_sub_sourceid")) << "Index dropped by the remap.";
+    EXPECT_EQ(0, CountWhere("Sub", "SourceId IS NULL")) << "SourceId values lost in the remap.";
+    EXPECT_NE((int) BE_SQLITE_DONE, Exec(Utf8PrintfString("INSERT INTO ts.Sub(Name,SourceId) VALUES('dup','%s')", existing.c_str()).c_str()))
+        << "Unique index no longer guards the remapped column.";
+    EXPECT_EQ((int) BE_SQLITE_DONE, Exec("INSERT INTO ts.Sub(Name,SourceId) VALUES('new','unique-value')")) << "Cannot insert a distinct SourceId.";
+    m_ecdb.AbandonChanges();
+    VerifyData();
+    }
+
+//---------------------------------------------------------------------------------------
+// Gone (P in ps1) is deleted, a later import adds New (Q, expected to take ps1), a third one
+// re-adds Gone. Keep must hold its values throughout and nothing stale may show through New or Gone.
+// RESULT: New.Q and the re-added Gone.P both take ps1; no stale rows, TPH deletion removed them. OK.
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MappingTests, SharedColumnReuseAcrossImportsAfterClassDeletion)
+    {
+    ASSERT_EQ(SUCCESS, SetupFromBaseline(GetColumnReuseBaseline()));
+    const Utf8String goneCol = Mapping("Gone", "P");
+
+    Utf8String step1 = GetBaselineSchemaXml();
+    RemoveClass(step1, "Gone");
+    ASSERT_EQ(SUCCESS, UpdateSchema(step1, SchemaVersionChange::Major)) << LastIssue();
+    VerifyData(ExpectedDataChanges().DeleteInstancesOf("TestSchema:Gone"));
+
+    Utf8String step2 = step1;
+    AppendToSchema(step2, R"xml(<ECEntityClass typeName="New">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="Q" typeName="string" />
+                </ECEntityClass>)xml");
+    ASSERT_EQ(SUCCESS, UpdateSchema(step2)) << LastIssue();
+    EXPECT_EQ(0, CountWhere("New", "ECInstanceId IS NOT NULL")) << "Rows of the deleted class show through the new class.";
+    VerifyData(ExpectedDataChanges().DeleteInstancesOf("TestSchema:Gone"));
+
+    Utf8String step3 = step2;
+    AppendToSchema(step3, R"xml(<ECEntityClass typeName="Gone">
+                    <BaseClass>Base</BaseClass>
+                    <ECProperty propertyName="P" typeName="string" />
+                </ECEntityClass>)xml");
+    ASSERT_EQ(SUCCESS, UpdateSchema(step3)) << LastIssue();
+    EXPECT_EQ(0, CountWhere("Gone", "ECInstanceId IS NOT NULL")) << "Deleted rows reappear under the re-added class.";
+    VerifyData(ExpectedDataChanges().DeleteInstancesOf("TestSchema:Gone"));
     }
 
 END_ECDBUNITTESTS_NAMESPACE
