@@ -7,10 +7,14 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFileName.h>
 #include <Bentley/Desktop/FileSystem.h>
+#include <BeSQLite/BeSQLite.h>
 #include <GeoCoord/BaseGeoCoord.h>
 #include <GeoCoord/BaseGeoTiffKeysList.h>
 
 #include "GeoCoordTestCommon.h"
+#include <memory>
+
+#include <csmap/cs_map.h>
 
 using namespace ::testing;
 
@@ -28,6 +32,199 @@ class BaseGCSUnitTests : public ::testing::Test
         BaseGCSUnitTests() {};
         ~BaseGCSUnitTests() {};
     };
+
+TEST_F(BaseGCSUnitTests, Wgs84LookupTracksActiveDictionaries)
+{
+    BeFileName directory;
+    BeTest::GetHost().GetTempDir(directory);
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, BeSQLite::BeSQLiteLib::Initialize(directory));
+    directory.AppendToPath(L"Wgs84LookupResources");
+    bool createdDirectory = false;
+    auto checkRecovery = [&]()
+        {
+        auto destroyDatum = [](Datum const* datum) { datum->Destroy(); };
+        std::unique_ptr<Datum const, decltype(destroyDatum)> datum(Datum::CreateDatum("WGS84"), destroyDatum);
+        ASSERT_NE(nullptr, datum.get());
+        ASSERT_TRUE(datum->IsValid());
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(directory));
+        createdDirectory = true;
+        auto writeDictionary = [&](Utf8CP resource, bvector<Byte> const& data)
+            {
+            BeFileName target(directory);
+            target.AppendToPath(WString(resource, BentleyCharEncoding::Utf8).c_str());
+            BeFile file;
+            ASSERT_EQ(BeFileStatus::Success, file.Create(target));
+            uint32_t written;
+            ASSERT_EQ(BeFileStatus::Success, file.Write(&written, data.data(), static_cast<uint32_t>(data.size())));
+            ASSERT_EQ(data.size(), written);
+            };
+        bmap<Utf8String, bvector<Byte>> dictionaries;
+        for (Utf8CP resource : {"coordsys.dty", "ellipsoid.dty", "GeodeticTransform.dty", "GeodeticPath.dty", "datum.dty"})
+            {
+            Utf8String path("assets/");
+            path.append(resource);
+            std::unique_ptr<csFILE, decltype(&CS_fclose)> file(CS_fopen(path.c_str(), "rb"), CS_fclose);
+            ASSERT_NE(nullptr, file.get());
+            ASSERT_EQ(0, CS_fseek(file.get(), 0, SEEK_END));
+            long size = CS_ftell(file.get());
+            ASSERT_GT(size, 0);
+            ASSERT_EQ(0, CS_fseek(file.get(), 0, SEEK_SET));
+            auto& data = dictionaries[resource];
+            data.resize(static_cast<size_t>(size));
+            ASSERT_EQ(data.size(), CS_fread(data.data(), 1, data.size(), file.get()));
+            if (0 != strcmp(resource, "datum.dty"))
+                {
+                writeDictionary(resource, data);
+                ASSERT_FALSE(HasFatalFailure());
+                }
+            }
+        BeJsDocument json;
+        ASSERT_EQ(SUCCESS, datum->ToJson(json));
+        GeoCoordTestCommon::Shutdown();
+        ASSERT_EQ(SUCCESS, BaseGCS::Initialize(directory.GetNameUtf8().c_str()));
+        auto checkPath = [&](bool available)
+            {
+            auto path = GeodeticTransformPath::CreateToWgs84(*datum);
+            EXPECT_EQ(available, nullptr != path);
+            if (nullptr != path)
+                path->Destroy();
+            };
+        for (int attempt = 0; attempt < 2; ++attempt)
+            {
+            EXPECT_NE(SUCCESS, datum->ToJson(json));
+            checkPath(false);
+            }
+        EXPECT_TRUE(datum->IsEquivalent(*datum, false));
+        writeDictionary("datum.dty", dictionaries["datum.dty"]);
+        ASSERT_FALSE(HasFatalFailure());
+        EXPECT_EQ(SUCCESS, datum->ToJson(json));
+        checkPath(true);
+
+        BeFileName datumPath(directory);
+        datumPath.AppendToPath(L"datum.dty");
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(datumPath));
+        {
+        std::unique_ptr<Datum const, decltype(destroyDatum)> unavailable(Datum::CreateDatum("WGS84"), destroyDatum);
+        ASSERT_NE(nullptr, unavailable.get());
+        ASSERT_FALSE(unavailable->IsValid());
+        }
+        EXPECT_EQ(SUCCESS, datum->ToJson(json));
+        checkPath(true);
+
+        BaseGCS::EnableLocalGcsFiles(false);
+        checkPath(false);
+        BaseGCS::EnableLocalGcsFiles(true);
+        writeDictionary("datum.dty", dictionaries["datum.dty"]);
+        ASSERT_FALSE(HasFatalFailure());
+        ASSERT_EQ(SUCCESS, datum->ToJson(json));
+        checkPath(true);
+
+        BeFileName workspacePath(directory);
+        workspacePath.AppendToPath(L"EmptyDatumDictionary.itwin-workspace");
+        {
+        BeSQLite::Db db;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, db.CreateNewDb(workspacePath.GetNameUtf8().c_str()));
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, db.ExecuteSql("CREATE TABLE blobs(id TEXT PRIMARY KEY NOT NULL, value BLOB)"));
+        {
+        BeSQLite::Statement insert;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, insert.Prepare(db, "INSERT INTO blobs VALUES('datum.dty', ?)"));
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, insert.BindBlob(1, dictionaries["datum.dty"].data(), sizeof(cs_magic_t), BeSQLite::Statement::MakeCopy::Yes));
+        ASSERT_EQ(BeSQLite::BE_SQLITE_DONE, insert.Step());
+        }
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, db.SaveChanges());
+        }
+        ASSERT_TRUE(BaseGCS::AddWorkspaceDb(workspacePath.GetNameUtf8(), nullptr, 10000));
+        EXPECT_NE(SUCCESS, datum->ToJson(json));
+        checkPath(false);
+        EXPECT_TRUE(datum->IsEquivalent(*datum, false));
+        };
+    checkRecovery();
+    GeoCoordTestCommon::Shutdown();
+    if (createdDirectory)
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(directory));
+}
+
+TEST_F(BaseGCSUnitTests, Wgs84CoincidenceHandlesPartialEllipsoidDictionary)
+{
+    BeFileName directory;
+    BeTest::GetHost().GetTempDir(directory);
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, BeSQLite::BeSQLiteLib::Initialize(directory));
+    directory.AppendToPath(L"Wgs84CoincidenceResources");
+    bool createdDirectory = false;
+    auto checkCoincidence = [&]()
+        {
+        auto destroyDatum = [](Datum const* datum) { datum->Destroy(); };
+        std::unique_ptr<Datum const, decltype(destroyDatum)> definition(Datum::CreateDatum("WGS84"), destroyDatum);
+        ASSERT_NE(nullptr, definition.get());
+        ASSERT_TRUE(definition->IsValid());
+        std::unique_ptr<Datum, decltype(destroyDatum)> datum(definition->Clone(), destroyDatum);
+        ASSERT_NE(nullptr, datum.get());
+        ASSERT_TRUE(datum->IsValid());
+        ASSERT_EQ(SUCCESS, datum->SetName("Wgs84CoincidenceTest"));
+        ASSERT_TRUE(datum->IsWGS84Coincident());
+        ASSERT_NE(nullptr, datum->GetCSDatum());
+
+        cs_magic_t header;
+        {
+        std::unique_ptr<csFILE, decltype(&CS_fclose)> file(CS_fopen("assets/ellipsoid.dty", "rb"), CS_fclose);
+        ASSERT_NE(nullptr, file.get());
+        ASSERT_EQ(sizeof(header), CS_fread(&header, 1, sizeof(header), file.get()));
+        }
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(directory));
+        createdDirectory = true;
+        BeFileName workspacePath(directory);
+        workspacePath.AppendToPath(L"EmptyEllipsoidDictionary.itwin-workspace");
+        {
+        BeSQLite::Db db;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, db.CreateNewDb(workspacePath.GetNameUtf8().c_str()));
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, db.ExecuteSql("CREATE TABLE blobs(id TEXT PRIMARY KEY NOT NULL, value BLOB)"));
+        {
+        BeSQLite::Statement insert;
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, insert.Prepare(db, "INSERT INTO blobs VALUES('ellipsoid.dty', ?)"));
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, insert.BindBlob(1, &header, sizeof(header), BeSQLite::Statement::MakeCopy::Yes));
+        ASSERT_EQ(BeSQLite::BE_SQLITE_DONE, insert.Step());
+        }
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, db.SaveChanges());
+        }
+        ASSERT_TRUE(BaseGCS::AddWorkspaceDb(workspacePath.GetNameUtf8(), nullptr, 10000));
+        std::unique_ptr<Datum, decltype(destroyDatum)> unavailable(definition->Clone(), destroyDatum);
+        ASSERT_NE(nullptr, unavailable.get());
+        ASSERT_TRUE(unavailable->IsValid());
+        ASSERT_EQ(nullptr, unavailable->GetCSDatum());
+        EXPECT_FALSE(datum->IsWGS84Coincident());
+
+        ASSERT_EQ(SUCCESS, unavailable->SetName("Wgs84CoincidenceTest"));
+        EXPECT_FALSE(unavailable->IsWGS84Coincident());
+        };
+    checkCoincidence();
+    GeoCoordTestCommon::Shutdown();
+    if (createdDirectory)
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(directory));
+}
+
+TEST_F(BaseGCSUnitTests, FormattedCsmapOutputForwardsArguments)
+{
+    BeFileName path;
+    BeTest::GetHost().GetTempDir(path);
+    path.AppendToPath(L"CsmapFormattedOutput.txt");
+    auto checkFormatting = [&]()
+        {
+        Utf8CP expected = "alpha,beta\n";
+        {
+        std::unique_ptr<csFILE, decltype(&CS_fclose)> file(CS_fopen(path.GetNameUtf8().c_str(), "wb"), CS_fclose);
+        ASSERT_NE(nullptr, file.get());
+        EXPECT_EQ(static_cast<int>(strlen(expected)), CS_fprintf(file.get(), "%s,%s\n", "alpha", "beta"));
+        }
+        BeFile file;
+        ASSERT_EQ(BeFileStatus::Success, file.Open(path, BeFileAccess::Read));
+        bvector<Byte> data;
+        ASSERT_EQ(BeFileStatus::Success, file.ReadEntireFile(data));
+        ASSERT_EQ(strlen(expected), data.size());
+        EXPECT_EQ(Utf8String(expected), Utf8String(reinterpret_cast<Utf8CP>(data.data()), data.size()));
+        };
+    checkFormatting();
+    EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(path));
+}
 
 /*---------------------------------------------------------------------------------**//**
 * Initial test for Json support
