@@ -1,0 +1,13 @@
+{
+  "name": "imodel-native-zstd",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "zstd",
+      "version>=": "1.5.7"
+    }
+  ],
+  "overrides": [
+    { "name": "zstd", "version": "1.5.7" }
+  ]
+}

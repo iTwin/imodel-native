@@ -2762,9 +2762,14 @@ protected:
     //! @note implementers should always forward this call to their superclass.
     BE_SQLITE_EXPORT virtual void _OnDbChangedByOtherConnection();
 
+    //! Validates an identity change before any pending changes are committed, including calls through Db.
+    virtual DbResult _ValidateBriefcaseIdChange(BeBriefcaseId newId) { return BE_SQLITE_OK; }
     virtual void _OnBeforeSetBriefcaseId(BeBriefcaseId newId) {}
     virtual void _OnAfterSetBriefcaseId() {}
     virtual void _OnDbGuidChange(BeGuid guid) {}
+
+    //! Allows a derived Db to retain ownership of its mandatory change tracker.
+    virtual DbResult _OnChangeTrackerChanging(ChangeTracker* tracker) { return BE_SQLITE_OK; }
 
     //! Gets the current version of the BeSQLite profile
     static ProfileVersion CurrentBeSQLiteProfileVersion() { return ProfileVersion(BEDB_CURRENT_VERSION_Major, BEDB_CURRENT_VERSION_Minor, BEDB_CURRENT_VERSION_Sub1, BEDB_CURRENT_VERSION_Sub2); }
@@ -3324,7 +3329,8 @@ public:
     //! Set or replace the ChangeTracker for this Db.
     //! @param[in] tracker The new ChangeTracker for this Db.
     //! @note If this Db already has a ChangeTracker active, the new one replaces it.
-    BE_SQLITE_EXPORT void SetChangeTracker(ChangeTracker* tracker);
+    //! @return BE_SQLITE_OK, BE_SQLITE_ERROR_NOTOPEN, or an error from a derived Db that disallows replacement.
+    BE_SQLITE_EXPORT DbResult SetChangeTracker(ChangeTracker* tracker);
 
     Savepoint* GetDefaultTransaction() const {return (m_dbFile != nullptr) ? &m_dbFile->m_defaultTxn : nullptr;}
 

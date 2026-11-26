@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd">
+
+    <!-- Zstandard compression, delivered as the static library BeZstd. Only built on the desktop
+         platforms, like its vcpkg install (see vcpkg_install_zstd in vcpkg.PartFile.xml). -->
+    <Part Name="Zstd" BentleyBuildMakeFile="Zstd.mke" OnlyPlatforms="linux*,x*,macos*" ExcludeLibType="Dynamic">
+        <SubPart PartName="vcpkg_install_zstd" PartFile="iModelCore/libsrc/vcpkg" LibType="Static"/>
+        <Bindings>
+            <VendorAPI Domain="zstd" />
+            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">Delivery/$(stlibprefix)BeZstd$(stlibext)</Libs>
+            <VendorNotices>Delivery/zstd-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+</BuildContext>

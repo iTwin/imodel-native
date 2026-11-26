@@ -2492,6 +2492,10 @@ DbResult Db::ChangeDbGuid(BeGuid guid) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::ResetBriefcaseId(BeBriefcaseId id) {
+    DbResult result = _ValidateBriefcaseIdChange(id);
+    if (BE_SQLITE_OK != result)
+        return result;
+
     // perform this even if id is already correct. May be changing txn state
     if (IsReadonly()) {
         BeAssert(false && "must be a writeable db");
@@ -2502,7 +2506,9 @@ DbResult Db::ResetBriefcaseId(BeBriefcaseId id) {
         return BE_SQLITE_ERROR;
     }
 
-    SaveChanges(); // make sure there are no pending unsaved changes
+    result = SaveChanges(); // make sure there are no pending unsaved changes
+    if (BE_SQLITE_OK != result)
+        return result;
 
     _OnBeforeSetBriefcaseId(id);
 
@@ -4202,15 +4208,23 @@ void DbFile::RemoveDataUpdateCallback() const { sqlite3_update_hook(m_sqlDb, nul
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Db::SetChangeTracker(ChangeTracker* tracker)
+DbResult Db::SetChangeTracker(ChangeTracker* tracker)
     {
+    if (nullptr == m_dbFile)
+        return BE_SQLITE_ERROR_NOTOPEN;
+
     if (m_dbFile->m_tracker.get() == tracker)
-        return;
+        return BE_SQLITE_OK;
+
+    DbResult const result = _OnChangeTrackerChanging(tracker);
+    if (BE_SQLITE_OK != result)
+        return result;
 
     if (tracker != nullptr)
         tracker->SetDb(this);
 
     m_dbFile->m_tracker = tracker;
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**

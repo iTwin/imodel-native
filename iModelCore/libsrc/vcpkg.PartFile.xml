@@ -61,17 +61,26 @@
              install root; they do not run vcpkg themselves. -->
         <SubPart PartName="vcpkg_install_curl" LibType="Static"/>
     </Part>
-    <!-- OnlyPlatforms: crashpad is only built on desktop platforms (see crashpad.PartFile.xml
-         OnlyPlatforms="linux*,x*,macos*"), so its vcpkg install must not run on iOS/Android.
-         vcpkg_install_all is built by the cache-warmer on every platform, so gating the install
-         here keeps it out of the iOS/Android warmer runs.  crashpad runs after freetype2 (the
-         previous all-platform link); on iOS/Android crashpad is skipped and freetype2 is the
-         chain tail. -->
-    <Part Name="vcpkg_install_crashpad" BentleyBuildMakeFile="vcpkg_install_crashpad.mke" OnlyPlatforms="linux*,x*,macos*">
+    <!-- OnlyPlatforms: zstd is only built on desktop platforms (see zstd/Zstd.PartFile.xml), so
+         its vcpkg install must not run on iOS/Android.  It runs after freetype2 (the last
+         all-platform link) and before crashpad, so that building zstd does not require crashpad. -->
+    <Part Name="vcpkg_install_zstd" BentleyBuildMakeFile="vcpkg_install_zstd.mke" OnlyPlatforms="linux*,x*,macos*">
         <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
              their chain part with LibType="Static" and read the packages from the static
              install root; they do not run vcpkg themselves. -->
         <SubPart PartName="vcpkg_install_freetype2" LibType="Static"/>
+    </Part>
+    <!-- OnlyPlatforms: crashpad is only built on desktop platforms (see crashpad.PartFile.xml
+         OnlyPlatforms="linux*,x*,macos*"), so its vcpkg install must not run on iOS/Android.
+         vcpkg_install_all is built by the cache-warmer on every platform, so gating the install
+         here keeps it out of the iOS/Android warmer runs.  crashpad runs after zstd (the
+         previous link, built on the same desktop platforms); on iOS/Android zstd and crashpad
+         are skipped and freetype2 is the chain tail. -->
+    <Part Name="vcpkg_install_crashpad" BentleyBuildMakeFile="vcpkg_install_crashpad.mke" OnlyPlatforms="linux*,x*,macos*">
+        <!-- LibType="Static": the chain always runs static-only.  Dynamic consumers depend on
+             their chain part with LibType="Static" and read the packages from the static
+             install root; they do not run vcpkg themselves. -->
+        <SubPart PartName="vcpkg_install_zstd" LibType="Static"/>
     </Part>
 
     <!-- Stable "build every vcpkg-managed library" aggregate.  It exists so the protected
@@ -90,6 +99,7 @@
         <SubPart PartName="vcpkg_install_openssl"/>
         <SubPart PartName="vcpkg_install_curl"/>
         <SubPart PartName="vcpkg_install_freetype2"/>
+        <SubPart PartName="vcpkg_install_zstd"/>
         <SubPart PartName="vcpkg_install_crashpad"/>
     </Part>
 
