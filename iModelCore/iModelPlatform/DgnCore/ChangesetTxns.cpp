@@ -297,21 +297,6 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
 
         m_lastErrorMessage = val.As<Napi::String>().Utf8Value();
     }));
-    arg.Set("getEcChange", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
-        BeJsNapiObject out(env);
-
-        BentleyStatus status = ChangesetReader::GetConflictReportJson(
-            m_dgndb,
-            ChangesetReader::PropertyFilter::All,
-            cause,
-            iter,
-            out);
-        if (status != SUCCESS)
-            THROW_JS_DGN_DB_EXCEPTION(env, "Failed to get conflict report", DgnDbStatus::BadArg);
-
-        return out;
-    }));
-
     const auto resJsVal = onRebaseLocalTxnConflict.Call(m_dgndb.GetJsTxns(), {arg});
     if (resJsVal.IsUndefined())
         THROW_JS_DGN_DB_EXCEPTION(jsDgnDb.Env(), "_onRebaseLocalTxnConflict must return a resolution", DgnDbStatus::BadArg);

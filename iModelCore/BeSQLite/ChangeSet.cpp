@@ -495,14 +495,6 @@ DbValue Changes::Change::GetNewValue(int colNum) const {
     return DbValue(val);
 }
 
-DbValue Changes::Change::GetConflictValue(int colNum) const {
-    SqlValueP val = nullptr;
-    int rc = sqlite3changeset_conflict(m_iter, colNum, &val);
-    BeAssert(rc == BE_SQLITE_OK);
-    UNUSED_VARIABLE(rc);
-    return DbValue(val);
-}
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

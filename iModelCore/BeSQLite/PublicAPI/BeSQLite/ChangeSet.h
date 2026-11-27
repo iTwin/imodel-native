@@ -119,14 +119,6 @@ public:
         //! For SQLITE_UPDATE, any column that was not affected by the change will be invalid.
         BE_SQLITE_EXPORT DbValue GetNewValue(int colNum) const;
 
-        //! get the new conflict value of a changed column. This is the value that was in the database
-        //! at the time the change was attempted. This method may only be called during
-        //! a conflict handler callback for a DELETE or UPDATE in which one or more column values
-        //! expected in the changeset does not match the values in the database, or for an INSERT
-        //! in which the primary key values already exist in the database.
-        //! @param colNum the column number desired.
-        BE_SQLITE_EXPORT DbValue GetConflictValue(int colNum) const;
-
         enum class Stage : bool { Old = 0, New = 1 };
         DbValue GetValue(int colNum, Stage stage) const { return (stage == Stage::Old) ? GetOldValue(colNum) : GetNewValue(colNum); }
 
