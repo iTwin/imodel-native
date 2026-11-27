@@ -57,6 +57,7 @@ ECDbAllHeaders = \
                 $(baseDir)ClassMap.h \
                 $(baseDir)RelationshipClassMap.h \
                 $(baseDir)PropertyMap.h \
+                $(baseDir)JsPropertyNaming.h \
                 $(baseDir)SystemPropertyMap.h \
                 $(baseDir)PropertyMapVisitor.h \
                 $(baseDir)ClassMapPersistenceManager.h \
@@ -417,6 +418,8 @@ $(o)ClassMapColumnFactory$(oext):                             $(baseDir)ClassMap
 $(o)ConcurrentQueryManagerImpl$(oext):                        $(baseDir)ConcurrentQueryManagerImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlRowAdaptor$(oext):                                   $(baseDir)ECSqlRowAdaptor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)JsPropertyNaming$(oext):                                  $(baseDir)JsPropertyNaming.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)InstanceReaderImpl$(oext):                                $(baseDir)InstanceReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

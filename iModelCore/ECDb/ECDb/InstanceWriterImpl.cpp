@@ -1299,7 +1299,7 @@ void Impl::CaptureUniqueConstraintConflict(Options const& options, ClassMapCR cl
     // for an expectedOldValues mismatch. Several columns of one property can take part in the same index.
     std::vector<Utf8String> rootPropertyNames;
     for (auto leaf : leaves) {
-        auto name = GetJsMemberName(leaf->GetPath().Front().GetProperty());
+        auto name = GetJsMemberName(leaf->GetPath().Front().GetProperty(), true);
         if (std::find(rootPropertyNames.begin(), rootPropertyNames.end(), name) == rootPropertyNames.end()) {
             rootPropertyNames.push_back(name);
             propsJson.appendValue() = name.c_str();

@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include "JsPropertyNaming.h"
 #include <GeomSerialization/GeomLibsSerialization.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
 #include <cmath>
@@ -49,27 +50,7 @@ BentleyStatus ECSqlRowAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& stm
 
             const auto memberProp = ecsqlValue.GetColumnInfo().GetProperty();
             if (m_options.UseJsNames()) {
-                const auto prim = memberProp->GetAsPrimitiveProperty();
-                Utf8String memberName = memberProp->GetName();
-                if (prim && !prim->GetExtendedTypeName().empty()) {
-                    const auto extendTypeId = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
-                    if (extendTypeId == ExtendedTypeHelper::ExtendedType::Id && memberName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
-                        memberName = ECN::ECJsonSystemNames::Id();
-                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::ClassId && memberName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
-                        memberName = m_options.UseClassFullNameInsteadofClassName() ?  ECN::ECJsonSystemNames::ClassFullName() : ECN::ECJsonSystemNames::ClassName();
-                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::SourceId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId))
-                        memberName = ECN::ECJsonSystemNames::SourceId();
-                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId))
-                        memberName = ECN::ECJsonSystemNames::SourceClassName();
-                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::TargetId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId))
-                        memberName = ECN::ECJsonSystemNames::TargetId();
-                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
-                        memberName = ECN::ECJsonSystemNames::TargetClassName();
-                    else
-                        ECN::ECJsonUtilities::LowerFirstChar(memberName);
-                } else {
-                    ECN::ECJsonUtilities::LowerFirstChar(memberName);
-                }
+                const auto memberName = GetJsMemberName(*memberProp, m_options.UseClassFullNameInsteadofClassName());
 
                 if (m_skipPropertyHandler && m_skipPropertyHandler(*memberProp))
                     continue;
@@ -462,25 +443,7 @@ void ECSqlRowAdaptor::GetMetaData(ECSqlRowProperty::List& list, ECSqlStatement c
                 jsName = tmp;
                 ECN::ECJsonUtilities::LowerFirstChar(jsName);
             } else {
-                jsName.assign(prop->GetName());
-                if (extendedTypeId == ExtendedTypeHelper::ExtendedType::Id && jsName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
-                    jsName = ECN::ECJsonSystemNames::Id();
-                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::ClassId && jsName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
-                    jsName = m_options.UseClassFullNameInsteadofClassName() ? ECN::ECJsonSystemNames::ClassFullName(): ECN::ECJsonSystemNames::ClassName();
-                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::SourceId && jsName.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId))
-                    jsName = ECN::ECJsonSystemNames::SourceId();
-                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId && jsName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId))
-                    jsName = ECN::ECJsonSystemNames::SourceClassName();
-                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::TargetId && jsName.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId))
-                    jsName = ECN::ECJsonSystemNames::TargetId();
-                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId && jsName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
-                    jsName = ECN::ECJsonSystemNames::TargetClassName();
-                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::NavId && jsName.EqualsIAscii(ECDBSYS_PROP_NavPropId))
-                    jsName = ECN::ECJsonSystemNames::Navigation::Id();
-                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::NavRelClassId && jsName.EqualsIAscii(ECDBSYS_PROP_NavPropRelECClassId))
-                    jsName = ECN::ECJsonSystemNames::Navigation::RelClassName();
-                else
-                    ECN::ECJsonUtilities::LowerFirstChar(jsName);
+                jsName = GetJsMemberName(*prop, m_options.UseClassFullNameInsteadofClassName(), true);
             }
         } else {
             jsName = col.GetPropertyPath().ToString();

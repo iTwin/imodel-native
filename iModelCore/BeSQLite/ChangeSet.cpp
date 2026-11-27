@@ -487,7 +487,7 @@ DbValue Changes::Change::GetOldValue(int colNum) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbValue Changes::Change::GetNewValue(int colNum) const {
+DbValue  Changes::Change::GetNewValue(int colNum) const {
     SqlValueP val = nullptr;
     int rc = sqlite3changeset_new(m_iter, colNum, &val);
     BeAssert(rc == BE_SQLITE_OK);

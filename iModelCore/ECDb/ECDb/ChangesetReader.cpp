@@ -13,34 +13,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String GetJsMemberName(ECN::ECPropertyCR ecProperty) {
-    Utf8String memberName = ecProperty.GetName();
-    const auto prim = ecProperty.GetAsPrimitiveProperty();
-    if (prim && !prim->GetExtendedTypeName().empty()) {
-        const auto extendTypeId = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
-        if (extendTypeId == ExtendedTypeHelper::ExtendedType::Id && memberName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
-            memberName = ECN::ECJsonSystemNames::Id();
-        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::ClassId && memberName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
-            memberName = ECN::ECJsonSystemNames::ClassFullName();
-        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::SourceId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId))
-            memberName = ECN::ECJsonSystemNames::SourceId();
-        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId))
-            memberName = ECN::ECJsonSystemNames::SourceClassName();
-        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::TargetId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId))
-            memberName = ECN::ECJsonSystemNames::TargetId();
-        else if (extendTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
-            memberName = ECN::ECJsonSystemNames::TargetClassName();
-        else
-            ECN::ECJsonUtilities::LowerFirstChar(memberName);
-    } else {
-        ECN::ECJsonUtilities::LowerFirstChar(memberName);
-    }
-    return memberName;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 ChangesetReader::ChangesetReader(): m_innerReader(std::make_unique<PreparedChangesetReader>()) {}
 
 //---------------------------------------------------------------------------------------
