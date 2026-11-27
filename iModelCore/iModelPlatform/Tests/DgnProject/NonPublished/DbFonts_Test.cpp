@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
+#include <zlib/zlib.h>
 
 /**
  *
@@ -385,8 +386,8 @@ TEST_F(FontTests, EmbeddingSystemFonts) {
 
 TEST_F(FontTests, IsRscFontData)
     {
-    // Serialized FONT060 data from RscFonts.itwin-workspace
-    const uint8_t data[375] = {
+    // Compressed FONT060 data from RscFonts.itwin-workspace, uncompressed size 1040 bytes
+    const Byte compressedData[375] = {
         0x78, 0x5E, 0xCD, 0xD3, 0x4D, 0x4E, 0xC2, 0x40, 0x14, 0xC0, 0xF1, 0x37, 0x2D, 0xB5, 0xD4, 0xDA,
         0x00, 0x22, 0x01, 0x82, 0x04, 0x8D, 0x1A, 0x63, 0x8C, 0x11, 0x35, 0x7E, 0xC5, 0x18, 0xBF, 0x13,
         0x96, 0x2E, 0xDD, 0xFA, 0x81, 0x2B, 0xA3, 0x89, 0x61, 0xCF, 0x01, 0xDC, 0x78, 0x09, 0x0E, 0x60,
@@ -412,6 +413,11 @@ TEST_F(FontTests, IsRscFontData)
         0xD1, 0x97, 0x39, 0x7A, 0x92, 0xAD, 0x4E, 0x28, 0x69, 0xB9, 0x7D, 0xB8, 0x6F, 0xD5, 0xB7, 0xEA,
         0x61, 0xDF, 0x17, 0x02, 0xDC, 0x64, 0xC9
         };
+    uLong dataSize, uncompressedSize = 1040;
+    bvector<Byte> data;
+    data.resize(uncompressedSize);
+    EXPECT_EQ(Z_OK, uncompress(data.data(), &dataSize, compressedData, sizeof(compressedData)));
+    EXPECT_EQ(dataSize, uncompressedSize);
 
-    EXPECT_TRUE(RscFont::IsRscFontData(data, sizeof(data)));
+    EXPECT_TRUE(RscFont::IsRscFontData(data.data(), data.size()));
     }
