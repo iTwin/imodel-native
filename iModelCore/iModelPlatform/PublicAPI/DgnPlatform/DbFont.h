@@ -222,7 +222,7 @@ public:
         return m_descenderRatio;
     }
 
-    DGNPLATFORM_EXPORT static bool IsRscFontData(uint8_t const* data);
+    DGNPLATFORM_EXPORT static bool IsRscFontData(uint8_t const* data, size_t dataSize);
 };
 
 /** An SHX DbFont. */
