@@ -27,6 +27,11 @@ BUILD_WITH_C20=1
 
 cDefs +% -D__BE_SQLITE_HOST_DLL__
 
+%if defined (CREATE_STATIC_LIBRARIES)
+    nameToDefine    = CURL_STATICLIB=1
+    %include cdefapnd.mki
+%endif
+
 %if $(TARGET_PLATFORM) == "WinRT"
     cDefs + -D__BE_SQLITE_WINRT__
 %endif
