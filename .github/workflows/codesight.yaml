@@ -1,0 +1,15 @@
+name: codesight
+on: [push]
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install -g codesight && codesight
+      - uses: actions/upload-artifact@v4
+        with:
+          name: codesight
+          path: .codesight/
